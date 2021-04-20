@@ -4,7 +4,7 @@ grpcio==1.9.1
 grpcio-tools==1.9.1
 pluggy==0.6.0
 protobuf==3.5.1
-py==1.5.2
+py==1.10.0
 pytest==3.4.1
 pytz==2018.3
 six==1.11.0
