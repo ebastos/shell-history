@@ -1,0 +1,14 @@
+[project]
+name = "shell-history"
+version = "0.1.0"
+description = "Shell History Management System"
+requires-python = ">=3.11"
+dependencies = []
+
+[tool.uv.workspace]
+members = [
+    "backend",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["backend"]

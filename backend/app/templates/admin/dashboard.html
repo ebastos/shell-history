@@ -1,0 +1,129 @@
+{% extends 'layout/base.html' %}
+
+{% block title %}Admin Dashboard - Shell History{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>👥 Admin Dashboard</h1>
+    <a href="/admin/users/new" class="btn btn-primary">+ New User</a>
+</div>
+
+<div class="stats-grid">
+    <div class="card stat-card">
+        <div class="stat-label">Total Users</div>
+        <div class="stat-value">{{ total }}</div>
+    </div>
+    <div class="card stat-card">
+        <div class="stat-label">Active Users</div>
+        <div class="stat-value">{{ users | selectattr('is_active') | list | length }}</div>
+    </div>
+</div>
+
+<div class="card">
+    <div class="table-container">
+        <table>
+            <thead>
+                <tr>
+                    <th>Username</th>
+                    <th>Email</th>
+                    <th>Role</th>
+                    <th>Status</th>
+                    <th>API Key</th>
+                    <th>Created</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for user in users %}
+                <tr>
+                    <td><strong>{{ user.username }}</strong></td>
+                    <td>{{ user.email }}</td>
+                    <td><span class="badge" style="background: rgba(255, 255, 255, 0.05);">{{ user.role }}</span></td>
+                    <td>
+                        {% if user.is_active %}
+                        <span class="badge badge-success">Active</span>
+                        {% else %}
+                        <span class="badge badge-error">Inactive</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if user.api_key %}
+                        <code
+                            style="font-family: inherit; font-size: 0.8rem; color: var(--text-secondary);">{{ user.api_key[:12] }}...</code>
+                        {% else %}
+                        <span style="color: var(--text-muted);">No key</span>
+                        {% endif %}
+                    </td>
+                    <td>{{ user.created_at.strftime('%Y-%m-%d') if user.created_at else 'N/A' }}</td>
+                    <td>
+                        <div style="display: flex; gap: 0.5rem;">
+                            <form method="POST" action="/admin/users/{{ user.id }}/toggle" style="display: inline;">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                <button type="submit"
+                                    class="btn {% if user.is_active %}btn-danger{% else %}btn-primary{% endif %}"
+                                    style="padding: 0.3rem 0.6rem; font-size: 0.8rem;">
+                                    {% if user.is_active %}Deactivate{% else %}Activate{% endif %}
+                                </button>
+                            </form>
+                            <form method="POST" action="/admin/users/{{ user.id }}/regenerate-key"
+                                style="display: inline;">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                <button type="submit" class="btn btn-secondary"
+                                    style="padding: 0.3rem 0.6rem; font-size: 0.8rem;">Regenerate</button>
+                            </form>
+                        </div>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="7" style="text-align: center; padding: 2rem; color: var(--text-muted);">
+                        No users found
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+{% if has_more %}
+<div style="margin-top: 1rem; text-align: center; color: var(--text-muted); font-size: 0.85rem;">
+    Showing {{ page * page_size + 1 }}-{{ (page + 1) * page_size }} of {{ total }}
+</div>
+{% endif %}
+
+{% if flash_message %}
+<div id="flashMessage"
+    style="position: fixed; top: 1rem; right: 1rem; max-width: 500px; z-index: 1000; background: {% if flash_category == 'success' %}rgba(34, 197, 94, 0.95){% elif flash_category == 'error' %}rgba(239, 68, 68, 0.95){% else %}rgba(59, 130, 246, 0.95){% endif %}; color: white; padding: 1rem; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.3);">
+    <div style="display: flex; justify-content: space-between; align-items: start; gap: 1rem;">
+        <div style="flex: 1; word-break: break-all; font-family: 'Fira Code', monospace; font-size: 0.875rem;">
+            {{ flash_message | e }}
+        </div>
+        <button class="icon-btn" onclick="document.getElementById('flashMessage').style.display='none'" style="color: white; background: rgba(255,255,255,0.2); border: none; border-radius: 4px; width: 24px; height: 24px; cursor: pointer; flex-shrink: 0;">×</button>
+    </div>
+    <button class="btn btn-primary" onclick="copyFlashMessage()" style="margin-top: 0.75rem; width: 100%; padding: 0.5rem; background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.3); color: white;">Copy API Key</button>
+</div>
+
+<script>
+    function copyFlashMessage() {
+        const message = document.getElementById('flashMessage').querySelector('div').textContent;
+        // Extract API key from message (format: "... API Key: <key>")
+        const match = message.match(/API Key:\s*([^\s]+)/);
+        if (match) {
+            navigator.clipboard.writeText(match[1]).then(() => {
+                alert('API Key copied to clipboard!');
+            });
+        } else {
+            navigator.clipboard.writeText(message).then(() => {
+                alert('Message copied to clipboard!');
+            });
+        }
+    }
+    // Auto-hide after 30 seconds
+    setTimeout(() => {
+        const flash = document.getElementById('flashMessage');
+        if (flash) flash.style.display = 'none';
+    }, 30000);
+</script>
+{% endif %}
+{% endblock %}

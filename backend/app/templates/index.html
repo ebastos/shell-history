@@ -1,0 +1,28 @@
+{% extends 'layout/base.html' %}
+
+{% block title %}History - Shell History{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>🔍 Command History</h1>
+    <div id="command-count" class="badge badge-success">
+        {% if total > 0 %}{{ total }} commands found{% endif %}
+    </div>
+</div>
+
+<div class="search-wrapper">
+    <span class="search-icon-fixed">🔍</span>
+    <input name="q" type="text" placeholder="Search commands, hosts, or users..." class="search-input"
+        hx-get="/ui/search" hx-trigger="keyup changed delay:300ms, search" hx-target="#command-list"
+        hx-indicator=".spinner-container">
+
+    <div class="spinner-container htmx-indicator"
+        style="position: absolute; right: 1rem; top: 50%; transform: translateY(-50%);">
+        <div class="spinner"></div>
+    </div>
+</div>
+
+<div id="command-list" class="command-list">
+    {% include 'partials/command_list.html' %}
+</div>
+{% endblock %}

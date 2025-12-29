@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Shell History{% endblock %}</title>
+    <link rel="stylesheet" href="/static/style.css">
+    <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+    {% block extra_head %}{% endblock %}
+</head>
+<body>
+    <div class="app-container">
+        {% include 'partials/sidebar.html' %}
+
+        <main class="main-content">
+            <div id="toast" class="toast">Command copied!</div>
+            {% block content %}{% endblock %}
+        </main>
+    </div>
+
+    <script>
+        function copyToClipboard(text) {
+            navigator.clipboard.writeText(text).then(() => {
+                const toast = document.getElementById('toast');
+                toast.classList.add('show');
+                setTimeout(() => {
+                    toast.classList.remove('show');
+                }, 2000);
+            });
+        }
+
+        // Sidebar toggle for mobile
+        function toggleSidebar() {
+            const sidebar = document.querySelector('.sidebar');
+            sidebar.classList.toggle('open');
+        }
+
+        // Add CSRF token to all HTMX requests
+        document.body.addEventListener('htmx:configRequest', function(evt) {
+            const csrfInput = document.querySelector('input[name="csrf_token"]');
+            if (csrfInput) {
+                evt.detail.headers['X-CSRF-Token'] = csrfInput.value;
+            }
+        });
+
+        // Add CSRF token to all regular form submissions
+        document.addEventListener('submit', function(evt) {
+            const form = evt.target;
+            if (form.tagName === 'FORM' && form.method.toUpperCase() === 'POST') {
+                const csrfInput = form.querySelector('input[name="csrf_token"]');
+                if (csrfInput && !form.querySelector('input[name="_csrf_header"]')) {
+                    // Add hidden header field that will be read by middleware
+                    // Actually, we can't set headers on regular form submission
+                    // So we'll rely on the form field being read by middleware
+                    // The middleware should handle this via request.form()
+                }
+            }
+        });
+
+        // Handle HTMX indicators
+        document.body.addEventListener('htmx:beforeRequest', function(evt) {
+            const target = evt.detail.target;
+            if (target.classList.contains('command-list')) {
+                target.style.opacity = '0.5';
+            }
+        });
+        document.body.addEventListener('htmx:afterRequest', function(evt) {
+            const target = evt.detail.target;
+            if (target.classList.contains('command-list')) {
+                target.style.opacity = '1';
+            }
+        });
+    </script>
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

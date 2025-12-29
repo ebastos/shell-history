@@ -1,0 +1,32 @@
+<aside class="sidebar">
+    <div class="sidebar-header">
+        <span class="logo-icon">🐚</span>
+        <span class="logo-text">Shell History</span>
+    </div>
+
+    <nav class="nav-links">
+        <a href="/history" class="nav-link {% if request.url.path == '/history' %}active{% endif %}">
+            <span class="nav-link-icon">🔍</span>
+            <span>History</span>
+        </a>
+        {% if user and user.role == 'admin' %}
+        <a href="/admin" class="nav-link {% if request.url.path.startswith('/admin') %}active{% endif %}">
+            <span class="nav-link-icon">📊</span>
+            <span>Dashboard</span>
+        </a>
+        {% endif %}
+        <a href="/account" class="nav-link {% if request.url.path == '/account' %}active{% endif %}">
+            <span class="nav-link-icon">👤</span>
+            <span>Account</span>
+        </a>
+    </nav>
+
+    <div class="sidebar-footer">
+        <form action="/logout" method="POST" style="width: 100%;">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button type="submit" class="btn btn-secondary" style="width: 100%; justify-content: center;">
+                <span>🚪</span> Logout
+            </button>
+        </form>
+    </div>
+</aside>

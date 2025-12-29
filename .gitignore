@@ -1,0 +1,27 @@
+# OS files
+.DS_Store
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+uv.lock
+
+# Go
+/client/shell-history
+/target/
+
+# Databases and Data
+*.db
+/data/
+/backend/data/
+
+# Other
+dist/
+node_modules/

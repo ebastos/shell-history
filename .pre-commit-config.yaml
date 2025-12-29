@@ -1,0 +1,122 @@
+# Pre-commit configuration for shell-history
+# Install: pip install pre-commit && pre-commit install
+# Run on all files: pre-commit run --all-files
+# See https://pre-commit.com for more information
+
+repos:
+  # Standard pre-commit hooks for general code hygiene
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v5.0.0
+    hooks:
+      # Remove trailing whitespace from all files
+      - id: trailing-whitespace
+        name: Remove trailing whitespace
+
+      # Ensure files end with a newline
+      - id: end-of-file-fixer
+        name: Fix end of files
+
+      # Prevent giant files from being committed (default 500KB)
+      - id: check-added-large-files
+        name: Check for large files
+        args: ['--maxkb=500']
+
+      # Detect merge conflict markers
+      - id: check-merge-conflict
+        name: Check for merge conflicts
+
+      # Validate YAML syntax
+      - id: check-yaml
+        name: Check YAML syntax
+
+      # Validate TOML syntax (for pyproject.toml, etc.)
+      - id: check-toml
+        name: Check TOML syntax
+
+      # Check for files that would conflict on case-insensitive filesystems
+      - id: check-case-conflict
+        name: Check case conflicts
+
+      # Detect private keys
+      - id: detect-private-key
+        name: Detect private keys
+        exclude: '^README\.md$'
+
+      # Check for debugger imports and breakpoints
+      - id: debug-statements
+        name: Check for debug statements
+
+  # Ruff - Fast Python linter and formatter (replaces flake8, black, isort, etc.)
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.8.4
+    hooks:
+      # Ruff linter - catches errors, style issues, and more
+      - id: ruff
+        name: Ruff linter
+        args: ['--fix']
+
+      # Ruff formatter - consistent code formatting (like black)
+      - id: ruff-format
+        name: Ruff formatter
+
+  # mypy - Static type checker for Python
+  - repo: https://github.com/pre-commit/mirrors-mypy
+    rev: v1.19.1
+    hooks:
+      - id: mypy
+        name: mypy type checker
+        additional_dependencies: [pydantic]
+        args: ['--config-file=backend/pyproject.toml']
+        files: ^backend/
+
+  # isort - Import sorting (configured to be compatible with Ruff)
+  - repo: https://github.com/pycqa/isort
+    rev: 5.13.2
+    hooks:
+      - id: isort
+        name: isort (import sorting)
+        args: ['--profile=black']  # Compatible with Ruff's formatting
+
+  # yamllint - Comprehensive YAML linting
+  - repo: https://github.com/adrienverge/yamllint
+    rev: v1.35.1
+    hooks:
+      - id: yamllint
+        name: yamllint
+        args: ['-d', '{extends: relaxed, rules: {line-length: {max: 120}}}']
+
+  # Local hooks for language-specific tests and checks
+  - repo: local
+    hooks:
+      - id: python-tests
+        name: Python Tests (pytest)
+        entry: bash -c "cd backend && uv run pytest -x -q"
+        language: system
+        files: ^backend/
+        types: [python]
+        pass_filenames: false
+        always_run: false
+
+      - id: go-bdd-tests
+        name: Go BDD Tests
+        entry: bash -c "cd client && go test -v ./integration"
+        language: system
+        files: ^client/
+        pass_filenames: false
+        always_run: false
+
+# Configuration for specific tools can also go in pyproject.toml
+# The settings below are defaults that work well together
+
+# Ruff configuration (add to pyproject.toml if customization needed):
+# [tool.ruff]
+# line-length = 88
+# target-version = "py311"
+#
+# [tool.ruff.lint]
+# select = ["E", "F", "W", "I", "UP", "B", "C4", "SIM"]
+#
+# isort configuration (add to pyproject.toml):
+# [tool.isort]
+# profile = "black"
+# line_length = 88

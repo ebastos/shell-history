@@ -1,0 +1,54 @@
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    ports:
+      - "3000:8000"
+    environment:
+      - DATABASE_URL=sqlite:///./data/history.db
+      - MEILISEARCH_URL=http://meilisearch:7700
+      - MEILISEARCH_MASTER_KEY=master-key-change-in-production
+      - ADMIN_USERNAME=${ADMIN_USERNAME:-admin}
+      - ADMIN_EMAIL=${ADMIN_EMAIL:-admin@example.com}
+      - ADMIN_PASSWORD=${ADMIN_PASSWORD:-change-me-in-production}
+      - SECRET_KEY=${SECRET_KEY:-change-me-in-production}
+      - SMTP_HOST=mailhog
+      - SMTP_PORT=1025
+      - SMTP_USER=
+      - SMTP_PASSWORD=
+      - SMTP_FROM_EMAIL=${SMTP_FROM_EMAIL:-noreply@shell-history.local}
+      - SMTP_USE_TLS=false
+    volumes:
+      - ./data:/app/data
+    depends_on:
+      - meilisearch
+      - mailhog
+    networks:
+      - history-network
+
+  meilisearch:
+    image: getmeili/meilisearch:v1.3
+    ports:
+      - "7700:7700"
+    environment:
+      - MEILI_MASTER_KEY=master-key-change-in-production
+    volumes:
+      - ./data/meili_data:/meili_data
+    networks:
+      - history-network
+
+  mailhog:
+    image: mailhog/mailhog:v1.0.1
+    ports:
+      - "1025:1025"  # SMTP server
+      - "8025:8025"  # Web UI
+    networks:
+      - history-network
+
+networks:
+  history-network:
+    driver: bridge
+
+volumes:
+  data:

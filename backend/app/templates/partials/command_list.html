@@ -1,0 +1,47 @@
+{% for cmd in commands %}
+<div class="command-card {% if cmd.exit_code != 0 and cmd.exit_code is not none %}error{% endif %}"
+    id="command-{{ cmd.id }}">
+    <div class="command-top">
+        <code class="command-code">{{ cmd.command | e }}</code>
+        <div class="command-actions">
+            <button class="icon-btn" data-command="{{ cmd.command | e }}" onclick="copyToClipboard(this.dataset.command)"
+                title="Copy command">📋</button>
+            <button class="icon-btn delete" hx-delete="/ui/commands/{{ cmd.id }}" hx-target="#command-{{ cmd.id }}"
+                hx-swap="outerHTML" hx-confirm="Are you sure you want to delete this command?"
+                title="Delete command">🗑️</button>
+        </div>
+    </div>
+
+    <div class="command-meta">
+        <span class="meta-item" title="Hostname">
+            <span>💻</span> {{ cmd.hostname }}
+        </span>
+        <span class="meta-item" title="User">
+            <span>👤</span> {{ cmd.username }}
+        </span>
+        {% if cmd.cwd %}
+        <span class="meta-item" title="Directory">
+            <span>📁</span> {{ cmd.cwd | truncate(35, True, '...') }}
+        </span>
+        {% endif %}
+        <span class="meta-item" title="Time">
+            <span>🕒</span> {{ cmd.timestamp.strftime('%Y-%m-%d %H:%M') if cmd.timestamp else 'Unknown' }}
+        </span>
+        {% if cmd.exit_code is not none %}
+        <span class="badge {% if cmd.exit_code == 0 %}badge-success{% else %}badge-error{% endif %}">
+            {{ '✓' if cmd.exit_code == 0 else '✗' }} {{ cmd.exit_code }}
+        </span>
+        {% endif %}
+    </div>
+</div>
+{% else %}
+<div class="card" style="text-align: center; padding: 4rem;">
+    <div style="font-size: 3rem; margin-bottom: 1rem;">📂</div>
+    <h3>No commands found</h3>
+    <p style="color: var(--text-secondary);">Try a different search or capture some commands first.</p>
+</div>
+{% endfor %}
+
+<div id="command-count" hx-swap-oob="true" class="badge badge-success">
+    {% if total > 0 %}{{ total }} commands found | Showing latest {{ commands|length }}{% endif %}
+</div>
