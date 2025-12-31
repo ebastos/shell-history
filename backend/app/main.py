@@ -10,13 +10,12 @@ from app.models import ApiKey, User
 from app.routers import admin, commands, hosts, stats, ui, user_ui, users
 from app.services.api_key import hash_api_key
 from app.services.auth import get_current_user
-from app.services.csrf import csrf_service
 from app.services.password import hash_password
+from app.ui_utils import templates
 from fastapi import Depends, FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
-from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
 
 # Create database tables
@@ -153,19 +152,7 @@ app.mount(
     "/static", StaticFiles(directory=os.path.join(BASE_DIR, "static")), name="static"
 )
 
-# Templates with CSRF token context
-templates = Jinja2Templates(directory=os.path.join(BASE_DIR, "templates"))
-
-
-# Add CSRF token helper to template globals
-# This makes csrf_token() available in all templates
-def get_csrf_token() -> str:
-    """Generate a CSRF token for templates"""
-    return csrf_service.generate_token()
-
-
-# Register as a global function that can be called in templates
-templates.env.globals["csrf_token"] = get_csrf_token
+# Templates are configured in ui_utils.py
 
 # Include routers
 app.include_router(commands.router, prefix="/api/v1")

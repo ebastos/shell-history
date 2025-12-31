@@ -1,33 +1,18 @@
 """UI router for HTMX-based web interface"""
 
-import os
 from uuid import UUID
 
 from app.database import get_db
 from app.models import Command, User
 from app.routers.commands import search_commands
 from app.services.auth import get_current_user
-from app.services.csrf import csrf_service
 from app.services.search import search_service
+from app.ui_utils import templates
 from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import HTMLResponse
-from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
 
 router = APIRouter(tags=["ui"])
-
-# Templates path relative to this file
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-templates = Jinja2Templates(directory=os.path.join(BASE_DIR, "templates"))
-
-
-# Add CSRF token function to templates
-def get_csrf_token() -> str:
-    """Generate a CSRF token for templates"""
-    return csrf_service.generate_token()
-
-
-templates.env.globals["csrf_token"] = get_csrf_token
 
 
 @router.get("/ui/search")

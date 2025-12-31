@@ -1,6 +1,5 @@
 """Admin interface router for tenant management"""
 
-import os
 import secrets
 from uuid import UUID
 
@@ -10,30 +9,15 @@ from app.middleware.csrf import verify_csrf_token
 from app.models import ApiKey, User
 from app.services.api_key import hash_api_key
 from app.services.auth import require_admin
-from app.services.csrf import csrf_service
 from app.services.flash import flash_service
-from app.services.password import hash_password, verify_password
-from app.services.rate_limit import get_client_ip, rate_limiter
-from app.services.session import session_manager
+from app.services.password import hash_password
+from app.ui_utils import templates
+from app.utils.auth_helpers import handle_login
 from fastapi import APIRouter, Depends, Form, HTTPException, Request, Response
 from fastapi.responses import HTMLResponse, RedirectResponse
-from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
 
 router = APIRouter(tags=["admin"])
-
-# Templates path
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-templates = Jinja2Templates(directory=os.path.join(BASE_DIR, "templates"))
-
-
-# Add CSRF token function to templates
-def get_csrf_token() -> str:
-    """Generate a CSRF token for templates"""
-    return csrf_service.generate_token()
-
-
-templates.env.globals["csrf_token"] = get_csrf_token
 
 
 @router.get("/admin/login", response_class=HTMLResponse)
@@ -51,69 +35,17 @@ async def admin_login(
     _csrf: None = Depends(verify_csrf_token),
 ) -> Response:
     """Handle admin login and create session."""
-    # Rate limiting: 5 attempts per 15 minutes per IP
-    client_ip = get_client_ip(request)
-    allowed, remaining = rate_limiter.is_allowed(
-        f"admin_login:{client_ip}", max_requests=5, window_seconds=900
+    return handle_login(
+        request=request,
+        username=username,
+        password=password,
+        db=db,
+        templates=templates,
+        template_name="admin/login.html",
+        redirect_url="/admin",
+        rate_limit_key="admin_login",
+        require_admin=True,
     )
-    if not allowed:
-        return templates.TemplateResponse(
-            "admin/login.html",
-            {
-                "request": request,
-                "error": "Too many login attempts. Please try again in 15 minutes.",
-            },
-            status_code=429,
-        )
-
-    # Find user by username
-    user = db.query(User).filter(User.username == username).first()
-
-    if not user:
-        return templates.TemplateResponse(
-            "admin/login.html",
-            {"request": request, "error": "Invalid username or password"},
-            status_code=401,
-        )
-
-    # Verify password
-    if not user.password_hash or not verify_password(password, user.password_hash):
-        return templates.TemplateResponse(
-            "admin/login.html",
-            {"request": request, "error": "Invalid username or password"},
-            status_code=401,
-        )
-
-    # Check if admin
-    if user.role != "admin":
-        return templates.TemplateResponse(
-            "admin/login.html",
-            {"request": request, "error": "Admin access required"},
-            status_code=403,
-        )
-
-    # Check if active
-    if not user.is_active:
-        return templates.TemplateResponse(
-            "admin/login.html",
-            {"request": request, "error": "Account is inactive"},
-            status_code=403,
-        )
-
-    # Create session
-    session_token = session_manager.create_session(user.id)
-
-    # Set cookie and redirect
-    response = RedirectResponse(url="/admin", status_code=303)
-    response.set_cookie(
-        key="session",
-        value=session_token,
-        httponly=True,
-        secure=settings.secure_cookies,
-        samesite="lax",
-        max_age=session_manager.expire_hours * 3600,
-    )
-    return response
 
 
 @router.post("/admin/logout")
